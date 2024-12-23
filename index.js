@@ -31,8 +31,14 @@ async function run() {
         // get services
         app.get('/services', async (req, res) => {
             const limit = parseInt(req.query.limit);
+            const email = req.query.email;
 
-            let cursor = serviceCollection.find().sort({ _id: -1 });
+            let query = {}
+            if (email) {
+                query = { provider_email: email }
+            }
+
+            let cursor = serviceCollection.find(query).sort({ _id: -1 });
             if (limit) {
                 cursor.limit(limit);
             }
