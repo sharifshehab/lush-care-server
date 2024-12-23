@@ -28,12 +28,20 @@ async function run() {
         const database = client.db("lushCareDB");
         const serviceCollection = database.collection("services");
 
+        // get services
+        app.get('/services', async (req, res) => {
+            const cursor = serviceCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+        
         // add services
         app.post('/services', async (req, res) => {
             const newService = req.body;
             const result = await serviceCollection.insertOne(newService);
             res.send(result);
         });
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
