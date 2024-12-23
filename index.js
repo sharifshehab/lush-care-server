@@ -96,6 +96,15 @@ async function run() {
             res.send(result);
         });
 
+        // get my booked services
+        app.get('/booked-services', async (req, res) => {
+            const email = req.query.email;
+            const query = { customerEmail: email }
+            const cursor = bookingCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
