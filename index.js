@@ -106,6 +106,22 @@ async function run() {
         });
 
 
+        app.patch('/booked-services/change-status/:id', async (req, res) => {
+            const id = req.params.id;
+            const data = req.body;
+
+            console.log(id, data);
+
+            const filter = { _id: new ObjectId(id) }
+            const updateStatus = {
+                $set: {
+                    serviceStatus: data.status
+                }
+            }
+            const result = await bookingCollection.updateOne(filter, updateStatus);
+            res.send(result);
+        })
+
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
 
