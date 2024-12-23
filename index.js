@@ -27,6 +27,7 @@ async function run() {
 
         const database = client.db("lushCareDB");
         const serviceCollection = database.collection("services");
+        const bookingCollection = database.collection("bookings");
 
         // get services
         app.get('/services', async (req, res) => {
@@ -43,6 +44,14 @@ async function run() {
                 cursor.limit(limit);
             }
             const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // get single service data 
+        app.get('/service/:id', async (req, res) => {
+            const serviceId = req.params.id;
+            const query = { _id: new ObjectId(serviceId) }
+            const result = await serviceCollection.findOne(query);
             res.send(result);
         });
         
@@ -72,19 +81,18 @@ async function run() {
             res.send(result);
         });
 
-        // TODO: marge these 2
-        app.get('/service/:id', async (req, res) => {
-            const serviceId = req.params.id;
-            const query = { _id: new ObjectId(serviceId) }
-            const result = await serviceCollection.findOne(query);
-            res.send(result);
-        });
-
         // delete service
         app.delete('/service/:id', async (req, res) => {
             const serviceId = req.params.id;
             const query = { _id: new ObjectId(serviceId) }
             const result = await serviceCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        // add booked services
+        app.post('/service-bookings', async (req, res) => {
+            const newBooking = req.body;
+            const result = await bookingCollection.insertOne(newBooking);
             res.send(result);
         });
 
