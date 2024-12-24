@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(cors(
     {
-        origin: ['http://localhost:5173'],
+        origin: ['http://localhost:5173', 'https://lush-care-f2f32.web.app', 'https://lush-care-f2f32.firebaseapp.com'],
         credentials: true
     }
 ));
@@ -35,7 +35,7 @@ const verifyingToken = async (req, res, next) => {
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-            return res.status(401).send({ message: 'unauthorized' }); 
+            return res.status(401).send({ message: 'unauthorized' });
         }
         req.user = decoded;
         next();
@@ -57,36 +57,46 @@ async function run() {
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false,
-                sameSite: 'lax'
+                secure: process.env.NODE_ENV === 'production' ? true : false,
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             })
-            .send({ success: true });
+                .send({ success: true });
         });
 
         // remove token
         app.post('/logout', async (req, res) => {
-            res.clearCookie('token', { maxAge: 0, secure: false, sameSite: 'none' }).send({ success: true }); 
+            res.clearCookie('token', { maxAge: 0, secure: process.env.NODE_ENV === 'production' ? true : false, sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', }).send({ success: true });
         });
 
-        // get services
-        app.get('/services', verifyingToken, async (req, res) => {
+        // get all services
+        app.get('/services', async (req, res) => {
 
             const limit = parseInt(req.query.limit);
-            const email = req.query.email;
 
-            if (req.user.email !== req.query.email) {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-        
-            let query = {}
-            if (email) {
-                query = { provider_email: email }
-            }
+            const searchValue = req.query.search;
+            let search = {};
 
-            let cursor = serviceCollection.find(query).sort({ _id: -1 });
+            if (typeof searchValue === 'string' && searchValue.trim() !== '') {
+                search = {
+                    name: { $regex: searchValue, $options: "i" }
+                };
+            }
+            let cursor = serviceCollection.find(search).sort({ _id: -1 });
             if (limit) {
                 cursor.limit(limit);
             }
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // get individual user added services
+        app.get('/my-services', verifyingToken, async (req, res) => {
+            const email = req.query.email;
+            if (req.user.email !== email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            let query = { provider_email: email }
+            let cursor = serviceCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -98,7 +108,7 @@ async function run() {
             const result = await serviceCollection.findOne(query);
             res.send(result);
         });
-        
+
         // add services
         app.post('/services', async (req, res) => {
             const newService = req.body;
@@ -144,7 +154,7 @@ async function run() {
         app.get('/booked-services', verifyingToken, async (req, res) => {
             const email = req.query.email;
             const role = req.query.role;
-            
+
             let query;
             if (role === 'customer') {
                 query = { customerEmail: email }
@@ -192,8 +202,5 @@ app.listen(port, () => {
 });
 
 
-/*
 
-
-*/
 
