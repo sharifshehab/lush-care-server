@@ -80,9 +80,7 @@ async function run() {
                     name: { $regex: searchValue, $options: "i" }
                 };
             }
-
             let cursor = serviceCollection.find(search);
-
             if (sortBy === 'asc') {
                 cursor = cursor.sort({ price: 1 });
             } else {
