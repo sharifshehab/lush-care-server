@@ -71,8 +71,8 @@ async function run() {
         // get all services
         app.get('/services', async (req, res) => {
             const limit = parseInt(req.query.limit);
-            const sortBy = req.query.sortBy === 'asc' ? 1 : -1;
-            
+            const sortBy = req.query.sortBy || 'desc';
+
             const searchValue = req.query.search;
             let search = {};
             if (typeof searchValue === 'string' && searchValue.trim() !== '') {
@@ -81,7 +81,13 @@ async function run() {
                 };
             }
 
-            let cursor = serviceCollection.find(search).sort({ price: sortBy });
+            let cursor = serviceCollection.find(search);
+
+            if (sortBy === 'asc') {
+                cursor = cursor.sort({ price: 1 });
+            } else {
+                cursor = cursor.sort({ price: -1 });
+            }
 
             if (limit) {
                 cursor.limit(limit);
